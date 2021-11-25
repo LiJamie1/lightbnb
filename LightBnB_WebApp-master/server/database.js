@@ -25,9 +25,9 @@ const getUserWithEmail = function(email) {
     `, values)
     .then((result) => {
       if (result) {
-        return Promise.resolve(result.rows[0])
+        return result.rows[0]
       } else {
-        return Promise.reject(null)
+        return null
       }
     })
     .catch((err) => console.log(err))
@@ -48,9 +48,9 @@ const getUserWithId = function(id) {
   `, values)
   .then((result) => {
     if (result) {
-      return Promise.resolve(result.rows[0])
+      return result.rows[0]
     } else {
-      return Promise.reject(null)
+      return null
     }
   })
   .catch((err) => console.log(err))
@@ -71,9 +71,9 @@ const addUser =  function(user) {
   `, values)
     .then((result) => {
       if (result) {
-        return Promise.resolve(result.rows[0])
+        return result.rows[0]
       } else {
-        return Promise.reject(null)
+        return null
       }
     })
     .catch((err) => console.log(err))
@@ -88,21 +88,21 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  const values = [guest_id, limit]
   return pool.query(`
-    SELECT *
-    FROM reservations
-    WHERE guest_id = $1
-    LIMIT $2;
-  `, values)
-    .then((result) => {
-      if (result) {
-        return Promise.resolve(result.rows)
-      } else {
-        return Promise.reject(null)
-      }
-    })
-    .catch((err) => console.log(err))
+  SELECT reservations.*, properties.*, AVG(rating)
+  FROM reservations
+  JOIN properties ON properties.id = property_id
+  JOIN property_reviews ON reservations.id = reservation_id
+  WHERE reservations.guest_id = $1
+  AND end_date < now()::date
+  GROUP BY properties.id, reservations.id
+  ORDER BY start_date DESC
+  LIMIT $2;
+  `, [guest_id, limit])
+  .then(result => {
+    return result.rows;
+  })
+  .catch(err => console.log(err.message));
 }
 exports.getAllReservations = getAllReservations;
 
@@ -115,8 +115,7 @@ exports.getAllReservations = getAllReservations;
  * @return {Promise<[{}]>}  A promise to the properties.
  */
 const getAllProperties = function(options, limit = 10) {
-  return pool
-    .query(`SELECT * FROM properties LIMIT $1`, [limit])
+  return pool.query(`SELECT * FROM properties LIMIT $1`, [limit])
   .then((result) => result.rows)
   .catch((err) => {
     console.log(err.message);
