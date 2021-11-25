@@ -24,10 +24,11 @@ const getUserWithEmail = function(email) {
     WHERE email = $1
     `, values)
     .then((result) => {
-      if (result.rows[0]) {
+      if (result) {
         return Promise.resolve(result.rows[0])
+      } else {
+        return Promise.reject(null)
       }
-      return Promise.reject(null)
     })
     .catch((err) => console.log(err))
 }
@@ -46,11 +47,13 @@ const getUserWithId = function(id) {
     WHERE id = $1;
   `, values)
   .then((result) => {
-    if (result.rows[0]) {
+    if (result) {
       return Promise.resolve(result.rows[0])
+    } else {
+      return Promise.reject(null)
     }
-    return Promise.reject(null)
   })
+  .catch((err) => console.log(err))
 }
 exports.getUserWithId = getUserWithId;
 
@@ -67,7 +70,11 @@ const addUser =  function(user) {
     VALUES ($1, $2, $3);
   `, values)
     .then((result) => {
-      return Promise.resolve(result.rows[0])
+      if (result) {
+        return Promise.resolve(result.rows[0])
+      } else {
+        return Promise.reject(null)
+      }
     })
     .catch((err) => console.log(err))
 }
@@ -81,7 +88,21 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  const values = [guest_id, limit]
+  return pool.query(`
+    SELECT *
+    FROM reservations
+    WHERE guest_id = $1
+    LIMIT $2;
+  `, values)
+    .then((result) => {
+      if (result) {
+        return Promise.resolve(result.rows)
+      } else {
+        return Promise.reject(null)
+      }
+    })
+    .catch((err) => console.log(err))
 }
 exports.getAllReservations = getAllReservations;
 
